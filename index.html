@@ -94,6 +94,10 @@ main{padding:12px}h1{font-size:22px}h2.sec{font-size:19px;margin:22px 0 10px}
 .md{padding:14px;border-radius:14px;max-height:92vh}.ov{padding:8px}.brow{padding:8px}
 }
 @media(max-width:380px){.grid{gap:8px}.card b{font-size:12px}.sl h2{font-size:20px}}
+#lb{position:fixed;inset:0;z-index:100;background:#000e;display:none;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}#lb.o{display:flex;animation:pop .2s}
+#lb img{max-width:94vw;max-height:90vh;object-fit:contain;border-radius:10px;box-shadow:0 0 40px #8b5cf655;user-select:none;-webkit-user-select:none}
+#lb .x{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;z-index:4;font-size:18px}#lb .dots{bottom:calc(14px + env(safe-area-inset-bottom,0px))}#lb .ar{width:48px;height:48px;font-size:28px}
+.pg .im img{object-fit:contain}#mainim{cursor:zoom-in}#mainim:has(img):after{content:"🔍";position:absolute;right:10px;bottom:8px;font-size:18px;opacity:.7}#mainim{position:relative}
 </style></head><body>
 <header>
 <div class="top"><span>📍 <button onclick="chCity()" id="city"></button></span><span id="tp"></span><a id="ph" href="tel:88001234567">☎ 8 800 123-45-67</a></div>
@@ -103,6 +107,7 @@ main{padding:12px}h1{font-size:22px}h2.sec{font-size:19px;margin:22px 0 10px}
 <div class="srch"><input id="q" placeholder="Найти товар по названию…" oninput="srch(this.value)" autocomplete="off"><div class="sr" id="sr"></div></div>
 <div class="nav" id="nav"></div></div></header>
 <main id="app"></main><footer id="ft"></footer>
+<div id="lb" onclick="if(event.target.id=='lb')lbC()" ontouchstart="LB.x=event.touches[0].clientX" ontouchend="lbSw(event)"></div>
 <div class="ov" id="ov"><div class="md" id="md"></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -111,7 +116,7 @@ const SUPA_URL='https://kqwmnbdvloerhfdkxloa.supabase.co',SUPA_KEY='sb_publishab
 let SN=null,SYNC=0,AG=0;
 const SB=(SUPA_URL&&SUPA_KEY&&window.supabase)?window.supabase.createClient(SUPA_URL,SUPA_KEY):null;
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){if(!window.__q){window.__q=1;alert('Память браузера заполнена: часть изменений не сохранится после обновления страницы. Фото в исходном качестве занимают много места — для их хранения используйте версию с Supabase.')}}};
 const rub=n=>Math.round(n).toLocaleString('ru-RU')+' ₽';
 const P=(id,cat,name,brand,year,country,w,cf,sp,d,disc=0)=>({id,cat,name,brand,year,country,warranty:w,cfgs:cf,sp,desc:d,disc,stock:true,imgs:[],date:id});
 const seed=()=>({cats:[{id:'phones',name:'Смартфоны',icon:'📱'},{id:'laptops',name:'Ноутбуки',icon:'💻'},{id:'audio',name:'Наушники',icon:'🎧'}],
@@ -127,7 +132,7 @@ const save=()=>{if(SB){sync();return}sv('ts_db2',D);sv('ts_s',S);sv('ts_u',U);sv
 const me=()=>U&&(S[U.email]=S[U.email]||{fav:[],cmp:[],cart:[]});
 const city=()=>ld('ts_city','Москва');
 const prod=id=>D.prods.find(p=>p.id==id),cat=id=>D.cats.find(c=>c.id==id);
-const img=(p,i=0)=>p.imgs&&p.imgs[i]?`<img src="${p.imgs[i]}" alt="">`:esc((cat(p.cat)||{}).icon||'📦');
+const img=(p,i=0)=>p.imgs&&p.imgs[i]?`<img src="${p.imgs[i]}" alt="" loading="lazy" decoding="async">`:esc((cat(p.cat)||{}).icon||'📦');
 function nav(){const m=me()||{fav:[],cmp:[],cart:[]};$('#city').textContent=city();
 $('#nav').innerHTML=`<a class="btn" href="#/cmp"><b class="ic2">⚖</b><span class="tx">Сравнение</span><i class="n">${m.cmp.length}</i></a><a class="btn" href="#/fav"><b class="ic2">♥</b><span class="tx">Избранное</span><i class="n">${m.fav.length}</i></a><a class="btn" href="#/cart"><b class="ic2">🛒</b><span class="tx">Корзина</span><i class="n">${m.cart.length}</i></a>`+(U?`${U.admin?'<a class="btn y" href="#/admin"><b class="ic2">⚙</b><span class="tx">Админ</span></a>':''}<button class="btn p" onclick="logout()"><b class="ic2">⎋</b><span class="tx">Выйти<span class="hl"> (${esc(U.email.split('@')[0])})</span></span></button>`:'<button class="btn p" onclick="loginM()"><b class="ic2">👤</b><span class="tx">Войти</span></button>');
 $('#mn').innerHTML=D.cats.map(c=>`<a href="#/cat/${c.id}">${esc(c.icon)} ${esc(c.name)}</a>`).join('')}
@@ -161,7 +166,7 @@ ${Object.entries(keys).map(([k,v])=>`<div><label>${esc(k)}</label><select onchan
 <div><div class="row" style="margin-bottom:12px"><span>Найдено: ${l.length}</span><select style="margin-left:auto;padding:8px;border-radius:8px" onchange="F['${id}'].sort=this.value;catp('${id}')">${[['new','Сначала новее'],['cheap','Сначала дешевле'],['exp','Сначала дороже'],['year','По году выпуска'],['name','По названию']].map(([v,t])=>`<option value="${v}" ${f.sort==v?'selected':''}>${t}</option>`).join('')}</select></div><div class="grid">${l.map(card).join('')||'<div class="box">Нет товаров</div>'}</div></div></div>`)}
 let CI=0,IM=0;
 function prodp(id){const p=prod(id);if(!p)return H('<div class="box">Товар не найден</div>');CI=0;IM=0;pp(p)}
-function pp(p){const m=me()||{fav:[],cmp:[]};H(`<div class="box pg"><div><div class="im" style="font-size:120px">${img(p,IM)}</div><div class="th">${(p.imgs||[]).map((s,i)=>`<img src="${s}" onclick="IM=${i};pp(prod(${p.id}))">`).join('')}</div></div>
+function pp(p){const m=me()||{fav:[],cmp:[]};H(`<div class="box pg"><div><div class="im" id="mainim" style="font-size:120px" onclick="lbOpen(${p.id},IM)">${img(p,IM)}</div><div class="th">${(p.imgs||[]).map((s,i)=>`<img src="${s}" onclick="IM=${i};pp(prod(${p.id}))">`).join('')}</div></div>
 <div style="display:grid;gap:10px;align-content:start"><a href="#/cat/${p.cat}" style="color:var(--a)">← ${esc((cat(p.cat)||{}).name)}</a><h1 style="margin:0">${esc(p.name)}</h1>
 <div class="${p.stock?'ok':'no'}">${p.stock?'✔ В наличии':'✖ Нет в наличии'}</div>
 <div class="row">${p.cfgs.map((c,i)=>`<button class="cf ${i==CI?'on':''}" onclick="CI=${i};pp(prod(${p.id}))">${esc(c.n)}<br><small>${rub(c.p*(1-p.disc/100))}</small></button>`).join('')}</div>
@@ -196,7 +201,7 @@ modal(`<h3>${id?'Редактирование':'Новый товар'}</h3><inp
 <textarea id="fcf" rows="3" placeholder="Конфигурации: название | цена (по строке)">${p.cfgs.map(c=>c.n+' | '+c.p).join('\n')}</textarea><textarea id="fs" rows="3" placeholder="Характеристики (для фильтров): Ключ: значение">${Object.entries(spx(p)).map(([k,v])=>k+': '+v).join('\n')}</textarea><textarea id="fx" rows="3" placeholder="Описание">${esc(p.desc)}</textarea>
 <label><input type="checkbox" id="fk" style="width:auto" ${p.stock?'checked':''}> В наличии</label><div id="ti"></div><input type="file" accept="image/*" multiple onchange="addI(this.files)"><button class="btn p" onclick="psave(${id||0})">Сохранить</button>`);ti()}
 function ti(){$('#ti').innerHTML=`<div class="th">${TI.map((s,i)=>`<div><img src="${s}"><br><button class="btn s" onclick="TI.splice(${i},1);ti()">✕</button><label class="btn s" style="display:inline-block">↻<input type="file" accept="image/*" hidden onchange="repI(${i},this.files[0])"></label></div>`).join('')}</div>`}
-const rd=f=>new Promise(r=>{const x=new FileReader();x.onload=()=>{const i=new Image();i.onload=()=>{const k=Math.min(1,(window.MX||600)/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);r(c.toDataURL('image/jpeg',.8))};i.src=x.result};x.readAsDataURL(f)});
+const rd=f=>new Promise(r=>{const x=new FileReader();x.onload=()=>r(x.result);x.readAsDataURL(f)});
 async function addI(fs){for(const f of fs)TI.push(await rd(f));ti()}async function repI(i,f){if(f){TI[i]=await rd(f);ti()}}
 function psave(id){const n=$('#fn').value.trim();if(!n)return alert('Укажите название');const cfgs=$('#fcf').value.split('\n').map(l=>l.split('|')).filter(a=>a[0].trim()).map(a=>({n:a[0].trim(),p:+(a[1]||0)||0}));if(!cfgs.length)return alert('Добавьте конфигурацию');
 const sp={};$('#fs').value.split('\n').forEach(l=>{const i=l.indexOf(':');if(i>0)sp[l.slice(0,i).trim()]=l.slice(i+1).trim()});
@@ -262,7 +267,7 @@ function card(p){const m=me()||{fav:[],cmp:[]},d=p.disc;return`<div class="card"
 function prodp(id){const p=prod(id);if(!p)return H('<div class="box">Товар не найден</div>');IM=0;pp(p)}
 function pick(id,k,v){const p=prod(id),o=k=='mem'?'color':'mem',s=sib(p),t=s.find(x=>x[k]==v&&x[o]==p[o])||s.find(x=>x[k]==v);if(t)location.hash='#/p/'+t.id}
 function pp(p){const m=me()||{fav:[],cmp:[]},s=sib(p),opt=(k,t)=>{const u=[...new Set(s.map(x=>(x.o||{})[k]).filter(Boolean))];return u.length?`<div><label style="color:var(--m)">${t}</label><div class="row">${u.map(v=>`<button class="cf ${(p.o||{})[k]==v?'on':''}" data-k="${esc(k)}" data-v="${esc(v)}" onclick="pick(${p.id},this.dataset.k,this.dataset.v)">${esc(v)}</button>`).join('')}</div></div>`:''};
-H(`<div class="box pg"><div><div class="im" style="font-size:120px">${img(p,IM)}</div><div class="th">${(p.imgs||[]).map((x,i)=>`<img src="${x}" onclick="IM=${i};pp(prod(${p.id}))">`).join('')}</div></div>
+H(`<div class="box pg"><div><div class="im" id="mainim" style="font-size:120px" onclick="lbOpen(${p.id},IM)">${img(p,IM)}</div><div class="th">${(p.imgs||[]).map((x,i)=>`<img src="${x}" onclick="IM=${i};pp(prod(${p.id}))">`).join('')}</div></div>
 <div style="display:grid;gap:10px;align-content:start"><a href="#/cat/${p.cat}" style="color:var(--b)">← ${esc((cat(p.cat)||{}).name)}</a><h1 style="margin:0">${esc(fn(p))}</h1><div class="${p.stock?'ok':'no'}">${p.stock?'✔ В наличии':'✖ Нет в наличии'}</div>
 ${(p.ops||[]).map(k=>opt(k,k)).join('')}
 <div><span class="pr" style="font-size:30px">${rub(price(p))}</span>${p.disc?`<span class="old">${rub(p.price)}</span> <span class="tag" style="position:static">−${rnd(p.disc)}%</span><div class="ok">Экономия ${rub(p.price-price(p))}</div>`:''}</div>
@@ -326,7 +331,7 @@ const J=JSON.stringify,ck=r=>{if(r&&r.error)throw r.error;return r};
 const prow=p=>({id:p.id,grp:p.grp,category_id:p.cat,name:p.name,brand:p.brand||'',description:p.desc||'',year:p.year,country:p.country||'',warranty_months:p.warranty,specs:p.sp||{},opt_names:p.ops||[],opts:p.o||{},price:p.price,discount:p.disc||0,in_stock:!!p.stock,images:p.imgs||[],created_at:new Date(p.date).toISOString()});
 const crow=(c,i)=>({id:c.id,name:c.name,icon:c.icon,sort:i});
 const orow=o=>({id:o.id,email:o.email,fio:o.fio,phone:o.phone,city:o.city,delivery:o.dv,address:o.addr,payment:o.pay,status:o.status||'new',total:o.total,items:o.items,created_at:new Date(o.id).toISOString()});
-async function up(d){const b=await(await fetch(d)).blob(),n=Date.now()+'-'+Math.random().toString(36).slice(2)+'.jpg';ck(await SB.storage.from('product-images').upload(n,b,{contentType:'image/jpeg'}));return SB.storage.from('product-images').getPublicUrl(n).data.publicUrl}
+async function up(d){const b=await(await fetch(d)).blob(),n=Date.now()+'-'+Math.random().toString(36).slice(2)+'.'+((b.type.split('/')[1]||'jpg').replace('jpeg','jpg').replace('svg+xml','svg'));ck(await SB.storage.from('product-images').upload(n,b,{contentType:b.type||'image/jpeg'}));return SB.storage.from('product-images').getPublicUrl(n).data.publicUrl}
 async function upImgs(){const d=x=>x&&x.startsWith('data:');for(const p of D.prods)for(let i=0;i<(p.imgs||[]).length;i++)if(d(p.imgs[i]))p.imgs[i]=await up(p.imgs[i]);for(const b of [...D.home.banners,...D.home.brands])if(d(b.img))b.img=await up(b.img)}
 async function tbl(name,rows,sn){const ch=rows.filter(r=>sn[r.id]!==J(r)),gone=Object.keys(sn).filter(id=>!rows.some(r=>r.id==id));
 if(ch.length){ck(await SB.from(name).upsert(ch));ch.forEach(r=>sn[r.id]=J(r))}if(gone.length){ck(await SB.from(name).delete().in('id',gone));gone.forEach(id=>delete sn[id])}}
@@ -378,6 +383,15 @@ const g=PG.grp||Date.now(),base={grp:g,name:n,ops:[...PG.ops],brand:$('#fb').val
 D.prods=D.prods.filter(x=>(x.grp||x.id)!=g||keep.includes(x.id));
 PG.V.forEach((v,i)=>{const o={};PG.ops.forEach(k=>{const t=(v.o[k]||'').trim();if(t)o[k]=t});const f={o,price:v.price,disc:Math.min(100,v.disc),stock:v.stock,imgs:v.imgs};if(v.id){const x=prod(v.id);Object.assign(x,base,f);delete x.mem;delete x.color}else D.prods.push({id:Date.now()+i,date:Date.now(),...base,...f})});save();close_();admin()}
 norm3();
+
+/* ===== v5: оригинальное качество фото и просмотр во весь экран ===== */
+let LB={id:0,i:0,x:0};
+function lbOpen(id,i){const p=prod(id);if(!p||!(p.imgs||[]).length)return;LB={id,i:i||0,x:0};lbR();$('#lb').classList.add('o');document.body.style.overflow='hidden'}
+function lbR(){const p=prod(LB.id),n=p.imgs.length;LB.i=(LB.i+n)%n;$('#lb').innerHTML=`<button class="btn x" onclick="lbC()">✕</button><img src="${p.imgs[LB.i]}" alt="">${n>1?`<button class="ar l" onclick="lbG(-1)">‹</button><button class="ar r" onclick="lbG(1)">›</button><div class="dots">${p.imgs.map((_,k)=>`<button class="dt ${k==LB.i?'on':''}" onclick="lbG(${k-LB.i})"></button>`).join('')}</div>`:''}`}
+function lbG(d){LB.i+=d;lbR()}
+function lbSw(e){const d=e.changedTouches[0].clientX-LB.x;const p=prod(LB.id);if(p&&p.imgs.length>1&&Math.abs(d)>40)lbG(d<0?1:-1)}
+function lbC(){$('#lb').classList.remove('o');document.body.style.overflow='';const m=$('#mainim'),p=prod(LB.id);if(m&&p){IM=LB.i;m.innerHTML=img(p,IM)}}
+document.addEventListener('keydown',e=>{if(!$('#lb').classList.contains('o'))return;if(e.key=='Escape')lbC();if(e.key=='ArrowLeft')lbG(-1);if(e.key=='ArrowRight')lbG(1)});
 
 addEventListener('hashchange',route);nav();route();
 if(SB)boot();
